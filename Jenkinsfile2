@@ -1,32 +1,36 @@
 node{
-  stage("Scm checkout"){
-    git 'https://github.com/DungLL183/tomcat-helloworld.git'
-  }
-  
-  stage("Maven build"){
-    sh 'mvn clean package'
-  }
-  
-  stage("Build docker image"){
-    sh 'docker build -t dungll183/docker-tomcat:v3 .'
-  }
-  
-  stage("Push docker image"){
-    withCredentials([string(credentialsId: 'creds-docker', variable: 'dockerHubPwd')]) {
-          sh "docker login -u dungll183 -p ${dockerHubPwd}"
+    agent any
+	
+	tools
+    {
+       maven 'maven'
     }
-    sh 'docker push dungll183/docker-tomcat:v3'
-  }
-  stage("Remove"){
-    def dockerRm = 'docker container rm -f my-app-2'
-    sshagent(['dev-server']) {
-      sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.3 ${dockerRm}"
+    stage('checkout') {
+                git branch: 'https://github.com/DungLL183/docker-tomcat.git'
+        }
+	stage('Execute Maven') {
+                sh 'mvn clean package'             
+      
+        }
+  	stage('Docker Build') {
+          
+                sh 'docker build -t samplewebapp:v4 .'
+          
+        }
+	 
+	 stage('docker push'){
+		 withCredentials([string(credentialsId: 'haha', variable: 'dockerPwd')]) {
+			 sh 'docker login -u dungll183 -p ${dockerPwd}'
+		}
+		sh 'docker push dungll183/samplewebapp:v4
+	 }
+     
+ 	stage('Run Docker container on remote hosts') {
+		def dockerRun = 'docker run -it --name my-application -p 8080:8080 -d dungll183/samplewebapp:v4'
+		sshagent(['ssh-ec2']) {
+                sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.3 ${dockerRun}
+		}
+	}
     }
-  }
-  stage("Deploy docker image to Tomcat server"){
-    def dockerRun = 'docker run -p 8080:8080 -d --name my-app-2 dungll183/docker-tomcat:v3'
-    sshagent(['dev-server']) {
-      sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.3 ${dockerRun}"
-    }
-  }
 }
+    
