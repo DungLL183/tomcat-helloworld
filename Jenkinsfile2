@@ -1,6 +1,6 @@
 node{
   stage("Scm checkout"){
-    git credentialsId: 'git_creds', url: 'https://github.com/anhdotdo/helloworld-1.git'
+    git 'https://github.com/DungLL183/tomcat-helloworld.git'
   }
   
   stage("Maven build"){
@@ -8,27 +8,20 @@ node{
   }
   
   stage("Build docker image"){
-    sh 'docker build -t anhdo98/my-app:0802v3 .'
+    sh 'docker build -t dungll183/docker-tomcat:v1 .'
   }
   
   stage("Push docker image"){
-    withCredentials([string(credentialsId: 'docker-pwd', variable: 'dockerHubPwd')]) {
-      sh "docker login -u anhdo98 -p ${dockerHubPwd}"
+    withCredentials([string(credentialsId: 'd-p', variable: 'dockerHubPwd')]) {
+          sh "docker login -u dungll183 -p ${dockerHubPwd}"
     }
-    sh 'docker push anhdo98/my-app:0802v3'
-  }
-  
-  stage("Remove"){
-    def dockerRm = 'docker container rm -f my-app-2'
-    sshagent(['dev-server']) {
-      sh "ssh -o StrictHostKeyChecking=no ec2-user@172.31.7.92 ${dockerRm}"
-    }
+    sh 'docker push dungll183/docker-tomcat:v1'
   }
   
   stage("Deploy docker image to Tomcat server"){
-    def dockerRun = 'docker run -p 8080:8080 -d --name my-app-2 anhdo98/my-app:0802v3'
+    def dockerRun = 'docker run -p 8080:8080 -d --name my-app-2 dungll183/docker-tomcat:v1'
     sshagent(['dev-server']) {
-      sh "ssh -o StrictHostKeyChecking=no ec2-user@172.31.7.92 ${dockerRun}"
+      sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.3 ${dockerRun}"
     }
   }
 }
