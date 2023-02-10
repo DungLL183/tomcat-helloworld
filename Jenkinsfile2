@@ -16,12 +16,7 @@ node{
           sh "docker login -u dungll183 -p ${dockerHubPwd}"
 	sh 'docker push dungll183/docker-tomcat:v3'
   }
-  stage("Remove"){
-    def dockerRm = 'docker container rm -f my-app-2'
-    sshagent(['dev-server']) {
-      sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.3 ${dockerRm}"
-	}
-}
+ 
   stage("Deploy docker image to Tomcat server"){
     def dockerRun = 'docker run -p 8080:8080 -d --name my-app-2 dungll183/docker-tomcat:v3'
     sshagent(['dev-server']) {
