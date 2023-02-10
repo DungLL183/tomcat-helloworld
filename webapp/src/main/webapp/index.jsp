@@ -1,2 +1,2 @@
-<h1> Hello, Welcome to Simple DevOps Project !!from dung.hcl@gmail.com vietnam tien bip</h1>
+<h1> Hello, Welcome to Simple DevOps Project !!from dung.hcl@gmail.com vietnam</h1>
 
