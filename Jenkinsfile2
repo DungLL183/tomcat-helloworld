@@ -1,0 +1,44 @@
+pipeline{
+  agent any
+  environment{
+    DOCKER_IMAGE_TAG = getNewTag()
+  }
+  stages{
+    stage("Build dockerfile"){
+      steps{
+        sh "docker build . -t anhdo98/my-docker-app:${DOCKER_IMAGE_TAG}"
+      }
+    }
+    
+    stage("Push docker image to dockerhub"){
+      steps{
+        withCredentials([string(credentialsId: 'docker-pwd', variable: 'dockerHubPwd')]) {
+          sh "docker login -u anhdo98 -p ${dockerHubPwd}"
+        }
+        sh 'docker push anhdo98/my-docker-app:${DOCKER_IMAGE_TAG}'
+      }
+    }
+    
+    stage("Deploy docker image to k8s"){
+      steps{
+        sh "chmod +x changeTag.sh"
+        sh "./changeTag.sh ${DOCKER_IMAGE_TAG}"
+        sshagent(['k8s-env']) {
+          sh "scp -o StrictHostKeyChecking=no services.yml node-app-pod.yml ubuntu@3.35.197.19:/home/ubuntu"
+          script{
+            try{
+              sh "ssh ubuntu@3.35.197.19 kubectl apply -f ."
+            }catch(error){
+              sh "ssh ubuntu@3.35.197.19 kubectl create -f ."
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+def getNewTag(){
+    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
+    return tag
+}
